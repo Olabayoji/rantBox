@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
 
 from routers.types.custom_types import GenderEnum
@@ -19,4 +19,9 @@ class GetUserResponse(BaseModel):
     username: str
     email: EmailStr
     gender: GenderEnum
-    date_created: date
+    date_created: datetime
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
