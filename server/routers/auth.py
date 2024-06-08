@@ -8,10 +8,18 @@ from global_context.context import (
     create_access_token,
     hash_password,
     db_dependency,
+    user_dependency,
+    pwd_context,
 )
 from models import User
 from fastapi import status
-from validations.validations import CreateUserRequest, GetUserResponse, Token
+from validations.validations import (
+    CreateUserRequest,
+    GetUserResponse,
+    ResetPasswordRequest,
+    Token,
+)
+
 
 router = APIRouter()
 
@@ -51,7 +59,7 @@ async def create_user(user: CreateUserRequest, db: db_dependency):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return new_user
+    return
 
 
 # login
@@ -79,3 +87,42 @@ async def login(
     )
 
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+# Reset Password
+@router.post("/reset-password", status_code=status.HTTP_201_CREATED)
+async def resetPassword(
+    user: user_dependency, db: db_dependency, form_data: ResetPasswordRequest
+):
+
+    # check if new password and new password verified are the same
+    if form_data.new_password != form_data.new_password_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Passwords do not match",
+        )
+
+    # check if the user exists
+    user_data = db.query(User).filter(User.id == user["user_id"]).first()
+    if not user_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found",
+        )
+
+    # check if the new password is the same as the old password
+    if pwd_context.verify(form_data.new_password, user_data.password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password cannot be the same as the old password",
+        )
+
+    # if all checks pass, hash the new password
+    hashed_password = hash_password(form_data.new_password)
+
+    # update the password
+    user_data.password = hashed_password
+    db.commit()
+    db.refresh(user_data)
+
+    return

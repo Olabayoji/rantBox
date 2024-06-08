@@ -2,3 +2,4 @@
 
 .env
 __pycache__/
+rant_box.db

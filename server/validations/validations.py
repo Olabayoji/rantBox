@@ -25,3 +25,10 @@ class GetUserResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class ResetPasswordRequest(BaseModel):
+    new_password: str = Field(min_length=8, max_length=20, title="Password")
+    new_password_verified: str = Field(
+        min_length=8, max_length=20, title="Password verified"
+    )
